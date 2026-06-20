@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "public": "public",
   "builds": [
     {
       "src": "backend_server.js",
@@ -11,10 +10,6 @@
     {
       "src": "/api/(.*)",
       "dest": "backend_server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
     }
   ]
 }
