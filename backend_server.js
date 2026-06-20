@@ -17,6 +17,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/api/test-key', (req, res) => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  res.json({
+    hasKey: !!key,
+    keyLength: key ? key.length : 0,
+    keyStart: key ? key.substring(0, 10) + '...' : 'NOT SET',
+    allEnvVars: Object.keys(process.env).filter(k => k.includes('ANTHROPIC') || k.includes('API'))
+  });
+});
+
 app.post('/api/generate-scripts', async (req, res) => {
   try {
     const { userData } = req.body;
