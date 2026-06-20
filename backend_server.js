@@ -1,45 +1,41 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// HEALTH CHECK
+// Rotas
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// GENERATE SCRIPTS
 app.post('/api/generate-scripts', (req, res) => {
   res.json({ 
     success: true, 
-    scripts: [{
-      titulo: 'Script Teste',
-      gancho: 'Hook aqui',
-      desenvolvimento: 'Conteúdo',
-      cta: 'Call to action'
-    }]
+    scripts: [
+      { titulo: 'Script 1', gancho: 'Hook 1' },
+      { titulo: 'Script 2', gancho: 'Hook 2' }
+    ]
   });
 });
 
-// AUTH SIGNUP
 app.post('/api/auth/signup', (req, res) => {
-  res.json({ success: true, user: { id: 'user123' } });
+  res.json({ success: true });
 });
 
-// AUTH LOGIN
 app.post('/api/auth/login', (req, res) => {
-  res.json({ success: true, user: { id: 'user123' } });
+  res.json({ success: true });
 });
 
-// Catch 404
+// Error handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
+  res.status(404).json({ error: 'Rota não encontrada: ' + req.path });
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Servidor na porta ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
