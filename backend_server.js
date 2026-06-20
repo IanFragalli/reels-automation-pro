@@ -13,107 +13,99 @@ const anthropic = new Anthropic({
 app.use(cors());
 app.use(express.json());
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Generate scripts with AI
 app.post('/api/generate-scripts', async (req, res) => {
   try {
     const { userData } = req.body;
     const { niche } = userData;
 
-    if (!niche) {
-      return res.status(400).json({ error: 'Nicho é obrigatório' });
-    }
+    console.log('🎬 Gerando scripts para:', niche);
 
-    // Prompt em português para gerar scripts virais
-    const prompt = `Você é um especialista em conteúdo viral para Instagram Reels.
+    const prompt = `Gere 5 scripts virais para Instagram Reels sobre: ${niche}
 
-Gere exatamente 5 scripts de vídeo viral para o nicho: "${niche}"
-
-Cada script deve ter:
-- Um título catchy
-- Um gancho irresistível (primeiros 3 segundos)
-- Desenvolvimento do conteúdo
-- Um CTA (call-to-action) claro
-- Duração recomendada (sempre 22-30 segundos)
-- Nível de dificuldade (Fácil/Médio/Difícil)
-
-Retorne APENAS em formato JSON válido, sem markdown, sem explicações:
+Retorne UM JSON válido com esta estrutura EXATA:
 {
   "scripts": [
     {
-      "titulo": "Título do script",
-      "gancho": "Hook irresistível que prende o espectador",
-      "desenvolvimento": "Desenvolvimento do conteúdo que resolve o problema",
-      "cta": "Call-to-action claro e direto",
+      "titulo": "Título aqui",
+      "gancho": "Hook aqui",
+      "desenvolvimento": "Desenvolvimento aqui",
+      "cta": "CTA aqui",
       "duracao": "22s",
       "dificuldade": "Fácil"
     }
   ]
-}`;
+}
 
-    console.log('🎬 Gerando scripts com IA para nicho:', niche);
+SÓ RETORNE O JSON, NADA MAIS.`;
 
-    // Chamada à API Anthropic
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    // Extrair texto da resposta
-    const responseText = message.content[0].type === 'text' 
-      ? message.content[0].text 
-      : '';
+    const responseText = message.content[0].text;
+    console.log('📝 Resposta da IA:', responseText.substring(0, 500));
 
-    console.log('📝 Resposta da IA:', responseText.substring(0, 200));
-
-    // Parsear JSON
-    let scripts;
+    // Parse JSON
+    let scripts = [];
     try {
-      // Tenta extrair JSON da resposta
+      const parsed = JSON.parse(responseText);
+      scripts = parsed.scripts || [];
+      console.log('✅ Scripts parseados:', scripts.length);
+    } catch (e) {
+      console.error('❌ Erro ao fazer parse:', e.message);
+      console.error('Resposta completa:', responseText);
+      
+      // Tenta extrair JSON se estiver embutido em texto
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        scripts = parsed.scripts || [];
-      } else {
-        throw new Error('JSON não encontrado na resposta');
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          scripts = parsed.scripts || [];
+          console.log('✅ JSON extraído com sucesso');
+        } catch (e2) {
+          console.error('❌ Ainda não conseguiu fazer parse');
+        }
       }
-    } catch (parseError) {
-      console.error('❌ Erro ao fazer parse do JSON:', parseError.message);
-      console.error('Resposta recebida:', responseText);
-      
-      // Fallback: mock scripts
+    }
+
+    // Se não conseguiu scripts, retorna fallback
+    if (scripts.length === 0) {
+      console.log('⚠️ Usando fallback data');
       scripts = [
         {
-          titulo: 'Os 3 Segredos que Ninguém Fala',
-          gancho: 'Você está fazendo errado desde o início',
-          desenvolvimento: 'A maioria não sabe disto. Aqui estão os 3 segredos que mudaram tudo',
-          cta: 'Salva esse vídeo e compartilha com um amigo',
+          titulo: 'Os 3 Segredos',
+          gancho: 'Você não sabe isto',
+          desenvolvimento: 'Explicação aqui',
+          cta: 'Clique para saber mais',
           duracao: '22s',
           dificuldade: 'Fácil'
         }
       ];
     }
 
-    console.log('✅ Scripts gerados:', scripts.length);
-
-    res.json({
-      success: true,
-      scripts: scripts,
-      niche: niche,
-    });
+    res.json({ success: true, scripts });
 
   } catch (error) {
-    console.error('❌ Erro ao gerar scripts:', error.message);
-    
-    res.status(500).json({
-      error:
+    console.error('❌ Erro:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/signup', (req, res) => {
+  res.json({ success: true });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  res.json({ success: true });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`✅ Servidor na porta ${PORT}`);
+});
