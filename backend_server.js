@@ -24,72 +24,85 @@ app.post('/api/generate-scripts', async (req, res) => {
 
     console.log('🎬 Gerando scripts para:', niche);
 
-    const prompt = `Gere 5 scripts virais para Instagram Reels sobre: ${niche}
+    const prompt = `Você é um especialista em scripts virais para Instagram Reels.
 
-Retorne UM JSON válido com esta estrutura EXATA:
+Tarefa: Gere EXATAMENTE 5 scripts diferentes para o nicho: ${niche}
+
+IMPORTANTE: Cada script DEVE ter os 6 campos abaixo. Nenhum campo pode estar vazio.
+
+Retorne UM JSON válido com esta estrutura:
 {
   "scripts": [
     {
-      "titulo": "Título aqui",
-      "gancho": "Hook aqui",
-      "desenvolvimento": "Desenvolvimento aqui",
-      "cta": "CTA aqui",
+      "titulo": "Título catchy e atraente",
+      "gancho": "Primeira linha que prende atenção (0-3 segundos)",
+      "desenvolvimento": "Conteúdo completo que resolve o problema ou curiosidade",
+      "cta": "Call-to-action claro e direto (exemplo: Salva esse vídeo)",
       "duracao": "22s",
       "dificuldade": "Fácil"
+    },
+    {
+      "titulo": "Segundo script diferente",
+      "gancho": "Hook diferente do anterior",
+      "desenvolvimento": "Conteúdo diferente",
+      "cta": "CTA diferente",
+      "duracao": "25s",
+      "dificuldade": "Médio"
     }
   ]
 }
 
-SÓ RETORNE O JSON, NADA MAIS.`;
+REGRAS:
+1. SEMPRE retorne EXATAMENTE 5 scripts
+2. TODOS os 6 campos devem estar preenchidos
+3. Retorne APENAS JSON, sem explicações
+4. Não adicione campos extras
+5. Cada script deve ser DIFERENTE do anterior
+6. Conteúdo em PORTUGUÊS do Brasil
+
+Agora gere:`;
 
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
-      max_tokens: 3000,
+      max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     });
 
     const responseText = message.content[0].text;
-    console.log('📝 Resposta da IA:', responseText.substring(0, 500));
+    console.log('📝 Resposta IA (primeiros 300 chars):', responseText.substring(0, 300));
 
-    // Parse JSON
     let scripts = [];
     try {
-      const parsed = JSON.parse(responseText);
-      scripts = parsed.scripts || [];
+      // Tenta fazer parse direto
+      scripts = JSON.parse(responseText).scripts || [];
       console.log('✅ Scripts parseados:', scripts.length);
     } catch (e) {
-      console.error('❌ Erro ao fazer parse:', e.message);
-      console.error('Resposta completa:', responseText);
+      console.error('❌ Erro parse 1:', e.message);
       
-      // Tenta extrair JSON se estiver embutido em texto
+      // Tenta extrair JSON se estiver embutido
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          scripts = parsed.scripts || [];
-          console.log('✅ JSON extraído com sucesso');
+          scripts = JSON.parse(jsonMatch[0]).scripts || [];
+          console.log('✅ JSON extraído:', scripts.length);
         } catch (e2) {
-          console.error('❌ Ainda não conseguiu fazer parse');
+          console.error('❌ Erro parse 2:', e2.message);
         }
       }
     }
 
-    // Se não conseguiu scripts, retorna fallback
-    if (scripts.length === 0) {
-      console.log('⚠️ Usando fallback data');
-      scripts = [
-        {
-          titulo: 'Os 3 Segredos',
-          gancho: 'Você não sabe isto',
-          desenvolvimento: 'Explicação aqui',
-          cta: 'Clique para saber mais',
-          duracao: '22s',
-          dificuldade: 'Fácil'
-        }
-      ];
-    }
+    // Validação: certificar que tem todos os campos
+    const scriptsValidos = scripts.filter(s => 
+      s.titulo && s.gancho && s.desenvolvimento && s.cta && s.duracao && s.dificuldade
+    );
 
-    res.json({ success: true, scripts });
+    console.log('✅ Scripts válidos:', scriptsValidos.length, 'de', scripts.length);
+
+    res.json({ 
+      success: true, 
+      scripts: scriptsValidos.length > 0 ? scriptsValidos : scripts,
+      count: scriptsValidos.length
+    });
 
   } catch (error) {
     console.error('❌ Erro:', error.message);
@@ -107,5 +120,5 @@ app.post('/api/auth/login', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor na porta ${PORT}`);
+  console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
