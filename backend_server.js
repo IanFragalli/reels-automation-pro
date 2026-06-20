@@ -1,26 +1,44 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
-import Anthropic from '@anthropic-ai/sdk';
 
 dotenv.config();
 
 const app = express();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const anthropic = new Anthropic();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 app.use(cors());
 app.use(express.json());
 
+// HEALTH CHECK
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.post('/api/generate-scripts', async (req, res) => {
-  res.json({ success: true, scripts: [] });
+// GENERATE SCRIPTS
+app.post('/api/generate-scripts', (req, res) => {
+  res.json({ 
+    success: true, 
+    scripts: [{
+      titulo: 'Script Teste',
+      gancho: 'Hook aqui',
+      desenvolvimento: 'Conteúdo',
+      cta: 'Call to action'
+    }]
+  });
+});
+
+// AUTH SIGNUP
+app.post('/api/auth/signup', (req, res) => {
+  res.json({ success: true, user: { id: 'user123' } });
+});
+
+// AUTH LOGIN
+app.post('/api/auth/login', (req, res) => {
+  res.json({ success: true, user: { id: 'user123' } });
+});
+
+// Catch 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
 });
 
 const PORT = process.env.PORT || 3001;
