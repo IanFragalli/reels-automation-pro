@@ -15,7 +15,7 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/generate-scripts', async (req, res) => {
   try {
-    const niche = req.body?.userData?.niche || 'general';
+    const niche = req.body?.userData?.niche || 'geral';
     
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
@@ -23,18 +23,82 @@ app.post('/api/generate-scripts', async (req, res) => {
     
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
-      max_tokens: 2000,
+      max_tokens: 3000,
       messages: [{
         role: 'user',
-        content: `Gere 5 scripts para: ${niche}. Retorne JSON com scripts array contendo 5 objetos com campos: titulo, gancho, desenvolvimento, cta, duracao, dificuldade`
+        content: `Você é um especialista em scripts virais para Instagram Reels.
+
+TAREFA: Gere EXATAMENTE 5 scripts DIFERENTES e ESPECÍFICOS para o nicho: "${niche}"
+
+IMPORTANTE: Cada script deve ser ÚNICO, com conteúdo ESPECÍFICO do nicho, NÃO genérico.
+
+Retorne APENAS este JSON, sem explicações:
+{
+  "scripts": [
+    {
+      "titulo": "Script 1 - Título específico para ${niche}",
+      "gancho": "Hook específico que chama atenção sobre ${niche}",
+      "desenvolvimento": "Conteúdo detalhado e específico para ${niche}",
+      "cta": "Call-to-action específico para ${niche}",
+      "duracao": "22s",
+      "dificuldade": "Fácil"
+    },
+    {
+      "titulo": "Script 2 - DIFERENTE do anterior",
+      "gancho": "Hook DIFERENTE - outro ângulo sobre ${niche}",
+      "desenvolvimento": "Conteúdo DIFERENTE - outro aspecto de ${niche}",
+      "cta": "CTA DIFERENTE",
+      "duracao": "25s",
+      "dificuldade": "Médio"
+    },
+    {
+      "titulo": "Script 3 - TERCEIRA abordagem",
+      "gancho": "Hook NOVO - terceiro ângulo sobre ${niche}",
+      "desenvolvimento": "Conteúdo NOVO - terceiro aspecto",
+      "cta": "CTA NOVO",
+      "duracao": "22s",
+      "dificuldade": "Fácil"
+    },
+    {
+      "titulo": "Script 4 - QUARTA abordagem",
+      "gancho": "Hook DIFERENTE - quarto ângulo",
+      "desenvolvimento": "Conteúdo DIFERENTE - quarto aspecto",
+      "cta": "CTA DIFERENTE",
+      "duracao": "28s",
+      "dificuldade": "Médio"
+    },
+    {
+      "titulo": "Script 5 - QUINTA abordagem",
+      "gancho": "Hook NOVO - quinto ângulo",
+      "desenvolvimento": "Conteúdo NOVO - quinto aspecto",
+      "cta": "CTA NOVO",
+      "duracao": "22s",
+      "dificuldade": "Fácil"
+    }
+  ]
+}`
       }]
     });
     
     const text = message.content[0].text;
-    const json = JSON.parse(text);
+    console.log('Resposta IA:', text.substring(0, 300));
     
-    res.json({ success: true, scripts: json.scripts || [] });
+    let scripts = [];
+    try {
+      const json = JSON.parse(text);
+      scripts = json.scripts || [];
+      console.log('Scripts gerados:', scripts.length);
+    } catch (parseError) {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const json = JSON.parse(jsonMatch[0]);
+        scripts = json.scripts || [];
+      }
+    }
+    
+    res.json({ success: true, scripts: scripts, count: scripts.length });
   } catch (error) {
+    console.error('Erro:', error.message);
     res.json({ success: false, error: error.message, scripts: [] });
   }
 });
