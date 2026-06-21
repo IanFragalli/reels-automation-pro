@@ -9,8 +9,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get('/api/debug-prompt', async (req, res) => {
+  try {
+    const niche = 'Marketing Digital'; // teste fixo
+    
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    
+    const message = await anthropic.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 3000,
+      messages: [{
+        role: 'user',
+        content: `Gere 5 scripts para: ${niche}. Retorne JSON com "scripts" array com EXATAMENTE 5 objetos.`
+      }]
+    });
+    
+    const text = message.content[0].text;
+    
+    res.json({ 
+      resposta_ia: text.substring(0, 500),
+      resposta_completa_length: text.length,
+      tem_5_scripts: (text.match(/"titulo":/g) || []).length
+    });
+  } catch (error) {
+    res.json({ erro: error.message });
+  }
 });
 
 app.post('/api/generate-scripts', async (req, res) => {
